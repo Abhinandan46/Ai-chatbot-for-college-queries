@@ -1,11 +1,12 @@
 #🎓 NLP-Powered College Information Chatbot
+---
 This project is a smart chatbot built using Natural Language Processing (NLP) to answer common queries related to a college. It uses Flask for the backend and SpaCy for intent detection and keyword extraction. The chatbot intelligently matches questions using a rule-based knowledge base and a CSV dataset of FAQs.
 
 🌐 Overview
 This chatbot helps students, parents, and visitors quickly get answers to important questions like admissions, fees, scholarships, hostel, placements, and more.
 
-Technologies Used:
-
+#Technologies Used:
+---
 Flask for building the web application
 
 SpaCy for processing user input and extracting meaningful tokens
@@ -14,7 +15,8 @@ FuzzyWuzzy for matching similar questions from the dataset
 
 CSV-based FAQ dataset for flexible and scalable Q&A handling
 
-🚀 Key Features
+#🚀 Key Features
+---
 Intent Detection: Greets, helps, or says goodbye using keyword-based NLP
 
 Knowledge Base Lookup: Uses rule-based matching from a custom knowledge_base.py file
@@ -25,7 +27,8 @@ Fallback Handling: Returns a polite default message if no good match is found
 
 User-Friendly Interface: Simple web UI built with HTML + CSS
 
-🛠️ Setup Instructions
+#🛠️ Setup Instructions
+---
 ✅ Requirements
 Python 3.7+
 
@@ -38,10 +41,11 @@ Pandas
 FuzzyWuzzy + python-Levenshtein
 
 📦 Installation
+---
 bash
 Copy
 Edit
-git clone https://github.com/YOUR_USERNAME/college-chatbot.git
+git clone https://github.com/Abhinandan46/Ai-chatbot-for-college-queries.git
 cd college-chatbot
 
 pip install -r requirements.txt
@@ -54,7 +58,7 @@ python app.py
 Visit: http://localhost:5000
 
 📁 Project Structure
-php
+```php
 Copy
 Edit
 college-chatbot/
@@ -69,7 +73,9 @@ college-chatbot/
 │   └── assets/                 # Optional images
 ├── templates/
 │   └── index.html              # Chatbot frontend
-💬 How the Chatbot Works
+```
+##💬 How the Chatbot Works
+---
 Input: User types a question.
 
 Intent Matching: If the question matches a greeting, help, or goodbye keyword — it responds accordingly.
@@ -81,6 +87,7 @@ CSV Matching: If not matched above, it uses fuzzy matching to find a similar que
 Fallback: If nothing fits, it gives a generic polite reply.
 
 📚 Example Questions It Can Answer
+---
 "How can I apply for admission?"
 
 "What is the fee for B.Tech?"
@@ -92,7 +99,8 @@ Fallback: If nothing fits, it gives a generic polite reply.
 "How to apply for scholarships?"
 
 🙌 About the Developer
-Built by Abhishek as part of a college project exploring practical applications of NLP in education.
+---
+Built by Abhinandan as part of a college project exploring practical applications of NLP in education.
 
 Tech Stack: Flask, SpaCy, Pandas, FuzzyWuzzy
 

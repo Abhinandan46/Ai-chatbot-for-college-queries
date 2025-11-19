@@ -1,15 +1,7 @@
 [
     {
         "sender": "user",
-        "message": "how_to_get_admission"
-    },
-    {
-        "sender": "bot",
-        "message": "You can apply through the college's online portal or visit the college admission cell for offline submission."
-    },
-    {
-        "sender": "user",
-        "message": "hello"
+        "message": "Hello."
     },
     {
         "sender": "bot",
@@ -17,34 +9,10 @@
     },
     {
         "sender": "user",
-        "message": "hello"
+        "message": "About fee structure."
     },
     {
         "sender": "bot",
-        "message": "\ud83d\udc4b Hello! Welcome to Govt PG College Una Chatbot. How may I help you?"
-    },
-    {
-        "sender": "user",
-        "message": "what is fee structure"
-    },
-    {
-        "sender": "bot",
-        "message": "Yes, on the official website."
-    },
-    {
-        "sender": "user",
-        "message": "ok"
-    },
-    {
-        "sender": "bot",
-        "message": "\ud83d\udc4d Okay! Let me know if you need more help."
-    },
-    {
-        "sender": "user",
-        "message": "thanx"
-    },
-    {
-        "sender": "bot",
-        "message": "\ud83d\ude4f You\u2019re most welcome! Glad to assist you."
+        "message": "\ud83d\udcb0 UG fees are \u20b93000\u2013\u20b95000 yearly; PG fees are slightly higher."
     }
 ]

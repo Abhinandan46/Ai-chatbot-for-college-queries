@@ -1,29 +1,46 @@
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 import spacy
 from fuzzywuzzy import process
-from knowledge_base import faq_knowledge_base, intent_keywords, intent_responses
+from knowledge_base import intent_keywords, intent_responses
 import os
 import json
 import requests
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # --------- CONFIG ---------
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
+app.secret_key = os.environ.get("SECRET_KEY", "your_secret_key")
 
-HF_API_KEY = "YOUR_HUGGINGFACE_TOKEN_HERE"
+HF_API_KEY = os.environ.get("HF_API_KEY", "YOUR_HUGGINGFACE_TOKEN_HERE")
 
 # File Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 HISTORY_FILE = os.path.join(BASE_DIR, "chat_history.json")
 USERS_FILE = os.path.join(BASE_DIR, "users.json")
+KB_FILE = os.path.join(BASE_DIR, "knowledge_base.json")
 
-# Create empty history file if not exists
-if not os.path.exists(HISTORY_FILE):
-    with open(HISTORY_FILE, "w") as f:
-        json.dump([], f)
+# Create empty files if not exists
+for file in [HISTORY_FILE, USERS_FILE, KB_FILE]:
+    if not os.path.exists(file):
+        with open(file, "w") as f:
+            json.dump({} if file == KB_FILE else [], f)
 
 # --------- INIT ---------
 nlp = spacy.load("en_core_web_sm")
+
+# Load knowledge base
+def load_knowledge_base():
+    with open(KB_FILE, "r") as f:
+        return json.load(f)
+
+def save_knowledge_base(kb):
+    with open(KB_FILE, "w") as f:
+        json.dump(kb, f, indent=4)
+
+faq_knowledge_base = load_knowledge_base()
 
 # --------- INTENT DETECTION ---------
 def detect_intent(user_input):
@@ -73,6 +90,15 @@ def ask_huggingface_fallback(prompt):
 
 # --------- CHATBOT LOGIC ---------
 def analyze_question(user_input):
+    from datetime import datetime
+    
+    # Check for time/date queries
+    user_lower = user_input.lower()
+    if "time" in user_lower and ("what" in user_lower or "current" in user_lower):
+        return f"The current time is {datetime.now().strftime('%H:%M:%S')}."
+    if "date" in user_lower and ("what" in user_lower or "today" in user_lower):
+        return f"Today's date is {datetime.now().strftime('%Y-%m-%d')}."
+    
     # Intent responses
     intent = detect_intent(user_input)
     if intent in intent_responses:
@@ -121,21 +147,23 @@ def save_user(username, password):
     users = load_users()
     if username in users:
         return False
-    users[username] = password
+    users[username] = generate_password_hash(password)
     with open(USERS_FILE, "w") as file:
         json.dump(users, file, indent=4)
     return True
 
 def authenticate_user(username, password):
     users = load_users()
-    return users.get(username) == password
+    if username not in users:
+        return False
+    return check_password_hash(users[username], password)
 
 # --------- ROUTES ---------
 @app.route("/")
 def index():
     if not session.get("logged_in"):
         return redirect(url_for("login"))
-    return render_template("index.html")
+    return render_template("index.html", username=session.get("username"))
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -144,6 +172,7 @@ def login():
         password = request.form.get("password")
         if authenticate_user(username, password):
             session["logged_in"] = True
+            session["username"] = username
             return redirect(url_for("index"))
         else:
             return render_template("login.html", error="Invalid credentials")
@@ -171,6 +200,8 @@ def register():
 @app.route("/logout")
 def logout():
     session.pop("logged_in", None)
+    session.pop("username", None)
+    session.pop("admin_confirmed", None)
     return redirect(url_for("login"))
 
 @app.route("/get_response", methods=["POST"])
@@ -182,8 +213,10 @@ def get_response():
         return jsonify({"error": "Use Content-Type: application/json"}), 415
 
     user_input = request.json.get("user_input")
-    if not user_input:
+    if not user_input or len(user_input.strip()) == 0:
         return jsonify({"error": "No input provided"}), 400
+    if len(user_input) > 500:
+        return jsonify({"error": "Input too long"}), 400
 
     try:
         bot_response = analyze_question(user_input)
@@ -191,7 +224,89 @@ def get_response():
         save_message_to_history("bot", bot_response)
         return jsonify({"response": bot_response})
     except Exception as e:
-        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+        app.logger.error(f"Error processing request: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/admin")
+def admin():
+    if not session.get("logged_in") or session.get("username") != "admin":
+        return redirect(url_for("login"))
+    if not session.get("admin_confirmed"):
+        return redirect(url_for("admin_confirm"))
+    return render_template("admin.html")
+
+@app.route("/admin_confirm", methods=["GET", "POST"])
+def admin_confirm():
+    if not session.get("logged_in") or session.get("username") != "admin":
+        return redirect(url_for("login"))
+    if request.method == "POST":
+        password = request.form.get("password")
+        if authenticate_user("admin", password):
+            session["admin_confirmed"] = True
+            return redirect(url_for("admin"))
+        else:
+            return render_template("admin_confirm.html", error="Incorrect password")
+    return render_template("admin_confirm.html")
+
+@app.route("/add_qa", methods=["POST"])
+def add_qa():
+    if not session.get("logged_in") or session.get("username") != "admin":
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    question = request.form.get("question")
+    answer = request.form.get("answer")
+    
+    if not question or not answer:
+        return jsonify({"error": "Question and answer required"}), 400
+    
+    global faq_knowledge_base
+    faq_knowledge_base[question.lower()] = answer
+    save_knowledge_base(faq_knowledge_base)
+    
+    return redirect(url_for("admin"))
+
+@app.route("/edit_qa", methods=["POST"])
+def edit_qa():
+    if not session.get("logged_in") or session.get("username") != "admin":
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    original_question = request.form.get("original_question")
+    new_question = request.form.get("new_question")
+    new_answer = request.form.get("new_answer")
+    
+    if not original_question or not new_question or not new_answer:
+        return jsonify({"error": "All fields required"}), 400
+    
+    global faq_knowledge_base
+    if original_question.lower() in faq_knowledge_base:
+        del faq_knowledge_base[original_question.lower()]
+    faq_knowledge_base[new_question.lower()] = new_answer
+    save_knowledge_base(faq_knowledge_base)
+    
+    return redirect(url_for("admin"))
+
+@app.route("/delete_qa", methods=["POST"])
+def delete_qa():
+    if not session.get("logged_in") or session.get("username") != "admin":
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    question = request.form.get("question")
+    
+    if not question:
+        return jsonify({"error": "Question required"}), 400
+    
+    global faq_knowledge_base
+    if question.lower() in faq_knowledge_base:
+        del faq_knowledge_base[question.lower()]
+        save_knowledge_base(faq_knowledge_base)
+    
+    return redirect(url_for("admin"))
+
+@app.route("/get_qa")
+def get_qa():
+    if not session.get("logged_in") or session.get("username") != "admin":
+        return jsonify({"error": "Unauthorized"}), 401
+    return jsonify(faq_knowledge_base)
 
 @app.route("/history")
 def chat_history():

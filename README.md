@@ -26,6 +26,12 @@ CSV Support: Searches a college_qa_dataset.csv file using fuzzy matching to cove
 Fallback Handling: Returns a polite default message if no good match is found
 
 User-Friendly Interface: Simple web UI built with HTML + CSS
+<img width="1920" height="1080" alt="Screenshot 2025-12-09 122706" src="https://github.com/user-attachments/assets/ab8191bd-a6d6-430b-8621-29739f319f9a" />
+<img width="1920" height="1080" alt="Screenshot 2025-12-09 122742 - Copy" src="https://github.com/user-attachments/assets/710ef858-78e6-453a-a64c-66abca859af3" />
+<img width="1920" height="1080" alt="Screenshot 2025-12-09 122827" src="https://github.com/user-attachments/assets/2db074de-688c-43fc-87d7-667593217b02" />
+<img width="1920" height="1080" alt="Screenshot 2025-12-09 122950 - Copy" src="https://github.com/user-attachments/assets/29f874a4-7b74-4165-8c3d-97ce61a3496a" />
+
+
 
 #🛠️ Setup Instructions
 ---
